@@ -1,23 +1,26 @@
 plugins {
-    java
+    kotlin("jvm")
     application
     id("com.gradleup.shadow") version "9.0.0-rc1"
 }
 
-group = "net.minestom.jam"
+group = "net.sinender.zombies"
 version = "1.0"
-application.mainClass = "net.minestom.jam.Main"
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+application.mainClass = "net.sinender.zombies.Main"
+kotlin.jvmToolchain(25)
 
 repositories {
     mavenCentral()
+    maven("https://central.sonatype.com/repository/maven-snapshots")
+    maven("https://repo.redstone.llc/releases")
 }
 
 dependencies {
-    implementation("net.minestom:minestom:2025.07.11-1.21.7")
-}
+    implementation(libs.minestom)
+    implementation(libs.fastutil)
+    implementation(libs.schem)
 
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
+    implementation(libs.tinylog.impl)
+    implementation(libs.tinylog.slf4j)
 }
