@@ -64,7 +64,7 @@ class BlockFinder(
          * A hitbox getter that finds a block's collision hitboxes.
          */
         val SOLID_BLOCK_HITBOXES: (Block) -> Collection<BoundingBox> = { block ->
-            val shape = block.registry().collisionShape()
+            val shape = block.registry()!!.collisionShape()
             listOf(BoundingBox(shape.relativeStart().asVec(), shape.relativeEnd().asVec()))
         }
 

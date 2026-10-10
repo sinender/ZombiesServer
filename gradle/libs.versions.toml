@@ -3,8 +3,10 @@ minestom = "26_3-SNAPSHOT"
 tinylog = "2.8.1"
 fastutil = "8.5.19"
 schem = "dev"
+pathfinding = "10.6.0"
 
 [libraries]
+pathfinding = { group = "ca.atlasengine", name = "pathfinding", version.ref = "pathfinding" }
 schem = { group = "dev.hollowcube", name = "schem", version.ref = "schem" }
 minestom = { group = "net.minestom", name = "minestom", version.ref = "minestom" }
 tinylog-impl = { group = "org.tinylog", name = "tinylog-impl", version.ref = "tinylog" }

@@ -11,18 +11,25 @@ import net.minestom.server.coordinate.Pos
 import net.minestom.server.entity.Player
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
+import net.minestom.server.sound.Music.GAME
 import net.minestom.server.tag.Tag
+import net.minestom.server.timer.ExecutionType
+import net.minestom.server.timer.TaskSchedule
+import net.sinender.zombies.Queue.Companion.GAME_START_DELAY
+import net.sinender.zombies.ZombiesServer.navigation
 import net.sinender.zombies.game.Wave
 import net.sinender.zombies.game.Window
 import net.sinender.zombies.game.tasks.SpawnZombie
 import net.sinender.zombies.game.tasks.Tick
 import net.sinender.zombies.instance.Lobby
+import net.sinender.zombies.instance.Lobby.SPAWN_POINT
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 class Game(players: Set<UUID>) : PacketGroupingAudience {
     val instance: InstanceContainer = createGameInstance()
@@ -31,17 +38,18 @@ class Game(players: Set<UUID>) : PacketGroupingAudience {
     val ending = AtomicBoolean(false)
 
     var currentWave: Wave
-    var zombiesRemaining: Int
+    var zombiesRemaining: Int = 0
 
     init {
+        navigation.watchBlockChanges(instance);
         windows.add(
             Window(
                 this,
                 Block.SPRUCE_SLAB,
-                Pair.of(Pos(5.0, 16.0, 42.0), Pos(5.0, 15.0, 41.0)),
-                Pair.of(Pos(0.0, 16.0, 42.0), Pos(4.0, 14.0, 41.0)),
-                Pair.of(Pos(6.0, 12.0, 42.0), Pos(6.0, 17.0, 42.0)),
-                Pos(1.0, 14.5, 41.5),
+                Pair.of(Pos(5.0, 16.0, 43.0), Pos(6.0, 14.0, 41.0)),
+                Pair.of(Pos(4.0, 16.0, 43.0), Pos(5.0, 14.5, 41.0)),
+                Pair.of(Pos(6.0, 12.0, 43.0), Pos(5.0, 17.0, 41.0)),
+                Pos(2.0, 14.5, 42.0),
             )
         )
 
@@ -57,7 +65,18 @@ class Game(players: Set<UUID>) : PacketGroupingAudience {
         GAMES.add(this)
 
         currentWave = Wave.DEFAULT_WAVE
-        zombiesRemaining = currentWave.zombieCount
+        val counter = AtomicInteger(5)
+        MinecraftServer.getSchedulerManager().submitTask({
+            val time = counter.decrementAndGet()
+            if (time <= 0) {
+                sendMessage(Component.text("The game has started!", NamedTextColor.GREEN))
+                zombiesRemaining = currentWave.zombieCount
+                return@submitTask TaskSchedule.stop()
+            }
+
+            sendMessage(Component.text("Game starting in $time seconds...", NamedTextColor.YELLOW))
+            TaskSchedule.seconds(1)
+        }, ExecutionType.TICK_END)
 
         MinecraftServer.getSchedulerManager().buildTask(Tick(this)).repeat(Duration.ofMillis(50)).schedule()
         MinecraftServer.getSchedulerManager().buildTask(SpawnZombie(this)).repeat(Duration.ofSeconds(1)).schedule()
