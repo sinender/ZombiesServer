@@ -2,10 +2,11 @@ package net.sinender.zombies.game.tasks
 
 import net.sinender.zombies.Game
 
-class SpawnZombie(private val game: Game): Runnable {
+class SpawnZombie(private val game: Game) : Runnable {
     override fun run() {
-        for (window in game.windows) {
-            window.attemptSpawn()
-        }
+        if (game.ending.get()) return
+        if (!game.started.get()) return
+        val window = game.windows.randomOrNull() ?: return
+        window.attemptSpawn(game)
     }
 }

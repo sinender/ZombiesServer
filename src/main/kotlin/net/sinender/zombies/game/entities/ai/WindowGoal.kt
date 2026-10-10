@@ -22,9 +22,9 @@ class WindowGoal(val zombie: Zombie) : GoalSelector(zombie) {
     override fun tick(time: Long) {
         val breakRegion = window.breakRegion
         val position = entityCreature.position
-        if (isInRegion(position.x(), position.y(), position.z(), breakRegion.first(), breakRegion.second())) {
+        if (isInRegion(position.x(), position.y(), position.z(), breakRegion.first, breakRegion.second)) {
             if (!Cooldown.hasCooldown(time, lastBreakTime, Duration.ofSeconds(2))) {
-                window.breakWindow(position)
+                window.breakWindow(zombie.game, position)
                 lastBreakTime = time
             }
         }
@@ -35,8 +35,8 @@ class WindowGoal(val zombie: Zombie) : GoalSelector(zombie) {
         val position = entityCreature.position
         val windowRegion = window.windowRegion
         val repairRegion = window.repairRegion
-        return isInRegion(position.x(), position.y(), position.z(), windowRegion.first(), windowRegion.second()) ||
-            isInRegion(position.x(), position.y(), position.z(), repairRegion.first(), repairRegion.second())
+        return isInRegion(position.x(), position.y(), position.z(), windowRegion.first, windowRegion.second) ||
+            isInRegion(position.x(), position.y(), position.z(), repairRegion.first, repairRegion.second)
     }
 
     override fun end() {
@@ -44,10 +44,10 @@ class WindowGoal(val zombie: Zombie) : GoalSelector(zombie) {
     }
 
     private fun insideTarget(): Pos {
-        val first = window.repairRegion.first()
-        val second = window.repairRegion.second()
-        val windowFirst = window.windowRegion.first()
-        val windowSecond = window.windowRegion.second()
+        val first = window.repairRegion.first
+        val second = window.repairRegion.second
+        val windowFirst = window.windowRegion.first
+        val windowSecond = window.windowRegion.second
         return Pos(
             (first.x() + second.x()) / 2.0,
             min(windowFirst.y(), windowSecond.y()),

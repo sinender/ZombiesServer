@@ -1,16 +1,14 @@
 package net.sinender.zombies.game
 
-import it.unimi.dsi.fastutil.Pair
 import net.kyori.adventure.sound.Sound
 import net.minestom.server.coordinate.BlockVec
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
-import net.minestom.server.entity.Player
+import net.minestom.server.coordinate.Vec
 import net.minestom.server.instance.Chunk
 import net.minestom.server.instance.block.Block
 import net.minestom.server.network.packet.server.play.WorldEventPacket
 import net.minestom.server.sound.SoundEvent
-import net.minestom.server.utils.PacketSendingUtils
 import net.minestom.server.worldevent.WorldEvent
 import net.sinender.zombies.Game
 import net.sinender.zombies.game.entities.Zombie
@@ -18,26 +16,34 @@ import kotlin.math.max
 import kotlin.math.min
 
 data class Window(
-    val game: Game,
     val blockType: Block,
+    val direction: Vec,
     val windowRegion: Pair<Point, Point>,
-    val breakRegion: Pair<Point, Point>,
-    val repairRegion: Pair<Point, Point>,
     val zombieSpawn: Pos,
 ) {
-    val rebuildBlocks = mutableListOf<Block>()
-    fun attemptSpawn() {
-        if (game.zombiesRemaining > 0) {
-            game.zombiesRemaining--
+    val breakRegion = Pair(
+        Pos(windowRegion.first.x() + direction.x(), windowRegion.first.y(), windowRegion.first.z() + direction.z()),
+        Pos(windowRegion.second.x() + direction.x(), windowRegion.second.y(), windowRegion.second.z() + direction.z())
+    )
+    val repairRegion = Pair(
+        Pos(windowRegion.first.x() - direction.x(), windowRegion.first.y() - 1, windowRegion.first.z() - direction.z()),
+        Pos(windowRegion.second.x() - direction.x(), windowRegion.second.y() - 1, windowRegion.second.z() - direction.z())
+    )
 
-            val zombie = Zombie(this)
+    val rebuildBlocks = mutableListOf<Pair<Block, Point>>()
+
+    fun attemptSpawn(game: Game) {
+        if (game.zombiesSpawned < game.currentWave.zombieCount) {
+            game.zombiesSpawned++
+
+            val zombie = Zombie(game, this, game.currentWave)
             zombie.setInstance(game.instance, zombieSpawn)
         }
     }
 
-    fun breakWindow(zombiePos: Point) {
-        val first = windowRegion.first()
-        val second = windowRegion.second()
+    fun breakWindow(game: Game, zombiePos: Point) {
+        val first = windowRegion.first
+        val second = windowRegion.second
         val minX = min(first.x(), second.x()).toInt()
         val maxX = max(first.x(), second.x()).toInt()
         val minY = min(first.y(), second.y()).toInt()
@@ -62,7 +68,7 @@ data class Window(
             }
             if (closestBlock != null) {
                 val block = game.instance.getBlock(closestBlock)
-                rebuildBlocks.add(block)
+                rebuildBlocks.add(Pair(block, closestBlock))
                 game.instance.setBlock(closestBlock, Block.AIR)
                 val chunk: Chunk? = game.instance.getChunkAt(closestBlock)
                 chunk?.sendPacketToViewers(
@@ -73,9 +79,28 @@ data class Window(
                         false
                     )
                 )
-                chunk?.viewersAsAudience?.playSound(Sound.sound(SoundEvent.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR.key(), Sound.Source.HOSTILE, 1f, 1f))
+                chunk?.viewersAsAudience?.playSound(Sound.sound(SoundEvent.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR.key(), Sound.Source.HOSTILE, 1f, 1f), closestBlock.x(), closestBlock.y(), closestBlock.z())
                 break
             }
+        }
+    }
+
+    fun rebuildWindow(game: Game) {
+        if (game.instance.getNearbyEntities(breakRegion.second, 2.0).any { it is Zombie }) return
+        val block = rebuildBlocks.removeFirstOrNull()
+        if (block != null) {
+            val (blockData, blockPos) = block
+            game.instance.setBlock(blockPos, blockData)
+            val chunk: Chunk? = game.instance.getChunkAt(blockPos)
+            chunk?.sendPacketToViewers(
+                WorldEventPacket(
+                    WorldEvent.PARTICLES_DESTROY_BLOCK.id(),
+                    blockPos,
+                    blockData.stateId(),
+                    false
+                )
+            )
+            chunk?.viewersAsAudience?.playSound(Sound.sound(SoundEvent.BLOCK_WOOD_PLACE.key(), Sound.Source.BLOCK, 1f, 1f), blockPos.x(), blockPos.y(), blockPos.z())
         }
     }
 }

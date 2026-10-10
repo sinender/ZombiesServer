@@ -6,27 +6,32 @@ import ca.atlasengine.pathfinding.profile.NavigationProfile
 import ca.atlasengine.pathfinding.profile.PlatformJumpCapabilities
 import net.minestom.server.entity.EntityCreature
 import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.ai.target.ClosestEntityTarget
+import net.minestom.server.entity.ai.target.LastEntityDamagerTarget
+import net.minestom.server.entity.metadata.monster.zombie.ZombieMeta
 import net.minestom.server.utils.time.TimeUnit
+import net.sinender.zombies.Game
 import net.sinender.zombies.ZombiesServer
+import net.sinender.zombies.game.Wave
 import net.sinender.zombies.game.Window
 import net.sinender.zombies.game.entities.ai.MeleeAttackGoal
 import net.sinender.zombies.game.entities.ai.WindowGoal
 
 
-class Zombie(val window: Window) : EntityCreature(EntityType.ZOMBIE), AutoCloseable {
-    var renderer: PathDebugRenderer = PathDebugRenderer()
-    var controller: EntityNavigationController = ZombiesServer.navigation.controller(this, 0.10)
+class Zombie(val game: Game, val window: Window, wave: Wave) : EntityCreature(EntityType.ZOMBIE), AutoCloseable {
+    var controller: EntityNavigationController = ZombiesServer.navigation.controller(this, wave.zombieSpeed)
+
     override fun close() {
         controller.close()
     }
 
     override fun tick(time: Long) {
         controller.tick()
-        renderer.render(controller)
         super.tick(time)
     }
+
     init {
         addAIGroup(
             listOf(
@@ -34,13 +39,9 @@ class Zombie(val window: Window) : EntityCreature(EntityType.ZOMBIE), AutoClosea
                 MeleeAttackGoal(this, 1.6, 20, TimeUnit.SERVER_TICK)
             ),
             listOf(
-                ClosestEntityTarget(this, 32.0) { entity -> entity is Player }
+                LastEntityDamagerTarget(this, 32f),
+                ClosestEntityTarget(this, 1000.0) { entity -> entity is Player && entity.gameMode != GameMode.CREATIVE },
             ),
         )
-    }
-
-    private companion object {
-        const val MIN_DROP = 0.05
-        const val MAX_DROP = 1.6
     }
 }

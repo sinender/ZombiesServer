@@ -18,13 +18,6 @@ class MeleeAttackGoal : GoalSelector {
     private var cachedTarget: Entity? = null
     private val zombie: Zombie
 
-    var jump: PlatformJumpCapabilities = PlatformJumpCapabilities
-        .acrossGaps(2) // two unsupported cells
-        .withRise(1.0)
-        .withDrop(2.0)
-
-
-
     constructor(
         entityCreature: EntityCreature,
         range: Double,

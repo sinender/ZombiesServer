@@ -3,7 +3,7 @@ minestom = "26_3-SNAPSHOT"
 tinylog = "2.8.1"
 fastutil = "8.5.19"
 schem = "dev"
-pathfinding = "10.6.0"
+pathfinding = "10.5.0"
 
 [libraries]
 pathfinding = { group = "ca.atlasengine", name = "pathfinding", version.ref = "pathfinding" }

@@ -14,10 +14,8 @@ kotlin.jvmToolchain(25)
 
 repositories {
     mavenCentral()
-    mavenLocal()
     maven("https://central.sonatype.com/repository/maven-snapshots")
     maven("https://repo.redstone.llc/releases")
-    maven("https://reposilite.atlasengine.ca/public")
 }
 
 dependencies {
